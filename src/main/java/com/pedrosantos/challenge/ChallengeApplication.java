@@ -10,7 +10,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import com.pedrosantos.challenge.config.StorageProperties;
-import com.pedrosantos.challenge.providers.impl.DiskStorageProvider;
+import com.pedrosantos.challenge.providers.impl.storage.DiskStorageProvider;
 
 @SpringBootApplication
 @ComponentScan({"com.pedrosantos.challenge"})

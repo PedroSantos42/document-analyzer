@@ -1,6 +1,7 @@
 package com.pedrosantos.challenge.resources;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,9 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.pedrosantos.challenge.entities.UserDocument;
+import com.pedrosantos.challenge.entities.WordMatch;
 import com.pedrosantos.challenge.exceptions.StorageFileNotFoundException;
-import com.pedrosantos.challenge.providers.impl.AmazonS3Provider;
-import com.pedrosantos.challenge.providers.impl.DiskStorageProvider;
+import com.pedrosantos.challenge.providers.impl.analysis.AmazonTextractProvider;
+import com.pedrosantos.challenge.providers.impl.storage.AmazonS3Provider;
+import com.pedrosantos.challenge.providers.impl.storage.DiskStorageProvider;
+import com.pedrosantos.challenge.services.userdocument.CreateUserDocumentService;
 
 @RestController
 @RequestMapping(value = "/")
@@ -33,10 +38,21 @@ public class FileUploadResource {
 
 	private final DiskStorageProvider diskStorage;
 
+	private final CreateUserDocumentService createUserDocument;
+
+	private final AmazonTextractProvider amazonDocumentAnalyser;
+
 	@Autowired
-	public FileUploadResource(DiskStorageProvider diskStorage, AmazonS3Provider amazonStorage) {
+	public FileUploadResource(
+			DiskStorageProvider diskStorage, 
+			AmazonS3Provider amazonStorage,
+			CreateUserDocumentService createUserDocument, 
+			AmazonTextractProvider amazonDocumentAnalyser
+			) {
 		this.diskStorage = diskStorage;
 		this.amazonStorage = amazonStorage;
+		this.createUserDocument = createUserDocument;
+		this.amazonDocumentAnalyser = amazonDocumentAnalyser;
 	}
 
 	@GetMapping("/")
@@ -63,25 +79,29 @@ public class FileUploadResource {
 	}
 
 	@PostMapping("/")
-	public ResponseEntity<String> handleFileUpload(@RequestParam("file") MultipartFile file,
+	public ResponseEntity<UserDocument> handleFileUpload(@RequestParam("file") MultipartFile file,
 			RedirectAttributes redirectAttributes) {
 
 		diskStorage.store(file);
 		// armazena no disco local
-		
-		amazonStorage.store(file); 
+
+		amazonStorage.store(file);
 		// deve retornar URL de acesso
-		
+
+		List<WordMatch> matches = amazonDocumentAnalyser.analyseDocument();
 		// servico para análise do documento
-		// montar lógica de matches(service) 
-		
+		// montar lógica de matches(service)
+
 		// montar obj UserDocument e enviar para service de armazenamento
 		// location (s3 URL)
 		// title: nome do arquivo
 		// matches IMPORTANT!!!
 		// user: usuário q mandou(id no post)
+		UserDocument result = createUserDocument.execute(UserDocument.builder().title("teste.pdf")
+				.location("localhost:8080/uploads/").matches(matches).user("Pedro").createdAt(new Date()).build());
 
-		return ResponseEntity.created(null).body("You successfully uploaded " + file.getOriginalFilename() + "!");
+		return ResponseEntity.created(null).body(result);// "You successfully uploaded " + file.getOriginalFilename() +
+															// "!");
 	}
 
 	@ExceptionHandler(StorageFileNotFoundException.class)

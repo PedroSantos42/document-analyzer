@@ -1,4 +1,4 @@
-package com.pedrosantos.challenge.providers.impl;
+package com.pedrosantos.challenge.providers.impl.storage;
 
 import java.io.File;
 import java.nio.file.Path;

@@ -19,7 +19,7 @@ public class S3Config {
 	@Value("${aws.secret_access_key}")
 	private String secretKey;
 
-	@Value("${s3.region}")
+	@Value("${aws.region}")
 	private String bucketRegion;
 
 	@Bean
@@ -31,13 +31,5 @@ public class S3Config {
 				.withCredentials(new AWSStaticCredentialsProvider(awsCredentials)).build();
 
 		return s3Client;
-
-//		Regions clientRegion = Regions.DEFAULT_REGION;
-//
-//		AmazonS3 s3Client = AmazonS3ClientBuilder.standard().withCredentials(new ProfileCredentialsProvider())
-//				.withRegion(clientRegion).build();
-//		
-//		return s3Client;
-
 	}
 }
