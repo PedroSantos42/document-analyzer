@@ -3,6 +3,7 @@ package com.pedrosantos.challenge.providers.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +38,7 @@ public class DiskStorageProvider implements StorageProvider {
 			if (file.isEmpty()) {
 				throw new StorageException("Failed to store empty file.");
 			}
-			
+
 			Path destinationFile = this.rootLocation.resolve(Paths.get(file.getOriginalFilename())).normalize()
 					.toAbsolutePath();
 			if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
@@ -86,15 +87,39 @@ public class DiskStorageProvider implements StorageProvider {
 
 	@Override
 	public void deleteAll() {
-		FileSystemUtils.deleteRecursively(rootLocation.toFile());
+		try {
+			Boolean isFolderEmpty = isEmpty(rootLocation);
+
+			if (isFolderEmpty) {
+				FileSystemUtils.deleteRecursively(rootLocation.toFile());
+			} else {
+				System.out.println("Folder could not be deleted, check if it's empty");
+			}
+		} catch (IOException e) {
+			throw new StorageException("Could not delete storage", e);
+		}
 	}
 
 	@Override
 	public void init() {
-		try {
-			Files.createDirectories(rootLocation);
-		} catch (IOException e) {
-			throw new StorageException("Could not initialize storage", e);
+		Boolean isFolderCreated = Files.exists(rootLocation);
+
+		if (!isFolderCreated) {
+			try {
+				Files.createDirectories(rootLocation);
+			} catch (IOException e) {
+				throw new StorageException("Could not initialize storage", e);
+			}
 		}
+	}
+
+	private boolean isEmpty(Path path) throws IOException {
+		if (Files.isDirectory(path)) {
+			try (DirectoryStream<Path> directory = Files.newDirectoryStream(path)) {
+				return !directory.iterator().hasNext();
+			}
+		}
+
+		return false;
 	}
 }
