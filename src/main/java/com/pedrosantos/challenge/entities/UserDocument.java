@@ -22,6 +22,7 @@ public class UserDocument {
     private Integer id;
 
     private String title;
+    private String location;
     private String user;
 
     @OneToMany(mappedBy = "document")

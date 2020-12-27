@@ -66,11 +66,20 @@ public class FileUploadResource {
 	public ResponseEntity<String> handleFileUpload(@RequestParam("file") MultipartFile file,
 			RedirectAttributes redirectAttributes) {
 
-		// adicionar try catchs e tratamentos de erros
-		
 		diskStorage.store(file);
+		// armazena no disco local
 		
-//		amazonStorage.store(file);
+		amazonStorage.store(file); 
+		// deve retornar URL de acesso
+		
+		// servico para análise do documento
+		// montar lógica de matches(service) 
+		
+		// montar obj UserDocument e enviar para service de armazenamento
+		// location (s3 URL)
+		// title: nome do arquivo
+		// matches IMPORTANT!!!
+		// user: usuário q mandou(id no post)
 
 		return ResponseEntity.created(null).body("You successfully uploaded " + file.getOriginalFilename() + "!");
 	}
