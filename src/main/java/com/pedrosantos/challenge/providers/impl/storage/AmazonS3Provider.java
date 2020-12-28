@@ -24,7 +24,7 @@ public class AmazonS3Provider implements StorageProvider {
 	@Autowired
 	private AmazonS3 s3Client;
 
-	@Value("${s3.bucket}")
+	@Value("${aws.s3.bucket}")
 	private String bucketName;
 
 	@Value("${storage.folder}")

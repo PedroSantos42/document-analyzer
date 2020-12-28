@@ -14,14 +14,14 @@ import lombok.Data;
 @Builder
 @Entity(name = "WORD_MATCHES")
 public class WordMatch {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
 
-    private String word;
-    private Integer quantity;
+	private String word;
+	private Integer quantity;
 
-    @ManyToOne
-    @JoinColumn(name = "document_id")
-    private UserDocument document;
+	@ManyToOne
+	@JoinColumn(name = "document_id")
+	private UserDocument document;
 }

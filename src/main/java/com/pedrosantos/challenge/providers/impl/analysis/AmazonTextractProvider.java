@@ -1,14 +1,16 @@
 package com.pedrosantos.challenge.providers.impl.analysis;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.textract.AmazonTextract;
 import com.amazonaws.services.textract.AmazonTextractClientBuilder;
@@ -23,25 +25,22 @@ public class AmazonTextractProvider {
 	@Value("${aws.region}")
 	private String awsRegion;
 
-	@Value("${s3.bucket}")
+	@Value("${aws.s3.bucket}")
 	private String bucket;
 
-	// The S3 bucket and document
-	// tornar informação dinâmica
-	String document = "CV_pictures.png";
+	@Value("${aws.textract.endpoint}")
+	private String textractEndpoint;
 
-	AmazonS3 s3client = AmazonS3ClientBuilder.standard()
-			.withEndpointConfiguration(new EndpointConfiguration("https://s3.amazonaws.com", "us-east-1")).build();
+	@Autowired
+	private AmazonS3 s3client;
 
-//	@Override
-	public List<WordMatch> analyseDocument() {
+	public List<String> analyseDocument(String fileName) {
 
 		// Get the document from S3
-		S3Object s3object = s3client.getObject(bucket, document);
+		S3Object s3object = s3client.getObject(bucket, fileName);
 
 		// Call AnalyzeDocument
-		EndpointConfiguration endpoint = new EndpointConfiguration("https://textract.us-east-1.amazonaws.com",
-				awsRegion);
+		EndpointConfiguration endpoint = new EndpointConfiguration(textractEndpoint, awsRegion);
 
 		AmazonTextract client = AmazonTextractClientBuilder.standard().withEndpointConfiguration(endpoint).build();
 
@@ -52,16 +51,29 @@ public class AmazonTextractProvider {
 		AnalyzeDocumentResult result = client.analyzeDocument(request);
 
 		List<String> textBlocks = result.getBlocks().stream().filter(block -> block.getText() != null)
-				.map(block -> block.getText()).collect(Collectors.toList());
+				.map(block -> block.getText().replaceAll("\\p{Punct}+$", "").replace(",", ""))
+				.collect(Collectors.toList());
 
-		// remover caracteres especiais e calcular a ocorrência das palavras
+		// filter the textBlocks with blank spaces to another list
+		List<String> textBlocksWithBlankSpaces = textBlocks.stream().filter(textBlock -> textBlock.trim().contains(" "))
+				.collect(Collectors.toList());
 
-		for (String text : textBlocks) {
-			System.out.println(text);
-			System.out.println("##");
+		// remove textBlocks with blank spaces
+		textBlocks = textBlocks.stream().filter(textBlock -> !textBlock.trim().contains(" "))
+				.collect(Collectors.toList());
+
+		List<String> separatedWordsFromTextBlocksWithBlankSpaces = new ArrayList<>();
+
+		for (String text : textBlocksWithBlankSpaces) {
+			separatedWordsFromTextBlocksWithBlankSpaces.addAll(Arrays.asList(text.trim().split(" ")));
 		}
 
-		return null;
+		textBlocks.addAll(separatedWordsFromTextBlocksWithBlankSpaces);
+
+		textBlocks = textBlocks.stream().filter(textBlock -> !textBlock.trim().isEmpty())
+				.map(textBlock -> textBlock.replaceAll("\\p{Punct}+$", "")).collect(Collectors.toList());
+
+		return textBlocks;
 	}
 
 }

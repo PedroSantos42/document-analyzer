@@ -1,11 +1,13 @@
 package com.pedrosantos.challenge.resources;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -36,19 +38,18 @@ public class FileUploadResource {
 
 	private final AmazonS3Provider amazonStorage;
 
+	private final AmazonTextractProvider amazonDocumentAnalyser;
+
 	private final DiskStorageProvider diskStorage;
 
 	private final CreateUserDocumentService createUserDocument;
 
-	private final AmazonTextractProvider amazonDocumentAnalyser;
+	@Value("${aws.s3.url}")
+	private String s3Url;
 
 	@Autowired
-	public FileUploadResource(
-			DiskStorageProvider diskStorage, 
-			AmazonS3Provider amazonStorage,
-			CreateUserDocumentService createUserDocument, 
-			AmazonTextractProvider amazonDocumentAnalyser
-			) {
+	public FileUploadResource(DiskStorageProvider diskStorage, AmazonS3Provider amazonStorage,
+			CreateUserDocumentService createUserDocument, AmazonTextractProvider amazonDocumentAnalyser) {
 		this.diskStorage = diskStorage;
 		this.amazonStorage = amazonStorage;
 		this.createUserDocument = createUserDocument;
@@ -61,7 +62,8 @@ public class FileUploadResource {
 		List<String> result = diskStorage.loadAll()
 				.map(path -> MvcUriComponentsBuilder
 						.fromMethodName(FileUploadResource.class, "serveFile", path.getFileName().toString()).build()
-						.toUri().toString())
+						.toUri()
+						.toString())
 				.collect(Collectors.toList());
 
 		return ResponseEntity.ok().body(result);
@@ -82,26 +84,38 @@ public class FileUploadResource {
 	public ResponseEntity<UserDocument> handleFileUpload(@RequestParam("file") MultipartFile file,
 			RedirectAttributes redirectAttributes) {
 
-		diskStorage.store(file);
+		String fileName = file.getOriginalFilename();
+
 		// armazena no disco local
+		diskStorage.store(file);
 
-		amazonStorage.store(file);
 		// deve retornar URL de acesso
+		amazonStorage.store(file);
 
-		List<WordMatch> matches = amazonDocumentAnalyser.analyseDocument();
-		// servico para análise do documento
-		// montar lógica de matches(service)
+		List<String> wordsInDocument = amazonDocumentAnalyser.analyseDocument(fileName);
 
-		// montar obj UserDocument e enviar para service de armazenamento
-		// location (s3 URL)
-		// title: nome do arquivo
-		// matches IMPORTANT!!!
-		// user: usuário q mandou(id no post)
-		UserDocument result = createUserDocument.execute(UserDocument.builder().title("teste.pdf")
-				.location("localhost:8080/uploads/").matches(matches).user("Pedro").createdAt(new Date()).build());
+		List<WordMatch> matches = wordsInDocument.stream().distinct()
+				.map(word -> getWordOccurrencesInList(word, wordsInDocument))
+				.sorted((Comparator<WordMatch>) (word1, word2) -> word2.getQuantity().compareTo(word1.getQuantity()))
+				.collect(Collectors.toList());
 
-		return ResponseEntity.created(null).body(result);// "You successfully uploaded " + file.getOriginalFilename() +
-															// "!");
+		UserDocument result = createUserDocument.execute(UserDocument.builder().title(fileName)
+				.location(s3Url.concat("/")).matches(matches).user("Pedro Santos").createdAt(new Date()).build());
+
+		return ResponseEntity.created(null).body(result);
+	}
+
+	private WordMatch getWordOccurrencesInList(String word, List<String> wordList) {
+
+		int count = -1;
+
+		for (String wordInTheList : wordList)
+			if (word.equals(wordInTheList))
+				count++;
+
+		WordMatch match = WordMatch.builder().word(word).quantity(count).build();
+
+		return match;
 	}
 
 	@ExceptionHandler(StorageFileNotFoundException.class)
