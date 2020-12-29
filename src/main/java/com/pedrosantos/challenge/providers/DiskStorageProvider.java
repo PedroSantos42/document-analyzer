@@ -1,4 +1,4 @@
-package com.pedrosantos.challenge.providers.impl.storage;
+package com.pedrosantos.challenge.providers;
 
 import java.io.IOException;
 import java.io.InputStream;

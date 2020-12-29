@@ -10,15 +10,15 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import com.pedrosantos.challenge.config.StorageProperties;
-import com.pedrosantos.challenge.providers.impl.storage.DiskStorageProvider;
+import com.pedrosantos.challenge.providers.DiskStorageProvider;
 
 @SpringBootApplication
-@ComponentScan({"com.pedrosantos.challenge"})
-@EntityScan({"com.pedrosantos.challenge"})
-@EnableJpaRepositories({"com.pedrosantos.challenge"})
+@ComponentScan({ "com.pedrosantos.challenge" })
+@EntityScan({ "com.pedrosantos.challenge" })
+@EnableJpaRepositories({ "com.pedrosantos.challenge" })
 @EnableConfigurationProperties(StorageProperties.class)
 public class ChallengeApplication {
-	
+
 	public static void main(String[] args) {
 		SpringApplication.run(ChallengeApplication.class, args);
 	}

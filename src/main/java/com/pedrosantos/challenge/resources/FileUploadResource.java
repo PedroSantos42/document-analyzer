@@ -21,16 +21,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.pedrosantos.challenge.entities.UserDocument;
 import com.pedrosantos.challenge.entities.WordMatch;
 import com.pedrosantos.challenge.exceptions.StorageFileNotFoundException;
-import com.pedrosantos.challenge.providers.impl.analysis.AmazonTextractProvider;
-import com.pedrosantos.challenge.providers.impl.storage.AmazonS3Provider;
-import com.pedrosantos.challenge.providers.impl.storage.DiskStorageProvider;
-import com.pedrosantos.challenge.services.userdocument.CreateUserDocumentService;
+import com.pedrosantos.challenge.providers.AmazonS3Provider;
+import com.pedrosantos.challenge.providers.AmazonTextractProvider;
+import com.pedrosantos.challenge.providers.DiskStorageProvider;
+import com.pedrosantos.challenge.services.userdocument.UserDocumentService;
+import com.pedrosantos.challenge.services.wordmatch.WordMatchService;
 
 @RestController
 @RequestMapping(value = "/")
@@ -42,31 +42,30 @@ public class FileUploadResource {
 
 	private final DiskStorageProvider diskStorage;
 
-	private final CreateUserDocumentService createUserDocument;
+	private final UserDocumentService createUserDocument;
+
+	private final WordMatchService createWordMatch;
 
 	@Value("${aws.s3.url}")
 	private String s3Url;
 
 	@Autowired
 	public FileUploadResource(DiskStorageProvider diskStorage, AmazonS3Provider amazonStorage,
-			CreateUserDocumentService createUserDocument, AmazonTextractProvider amazonDocumentAnalyser) {
+			UserDocumentService createUserDocument, AmazonTextractProvider amazonDocumentAnalyser,
+			WordMatchService createWordMatch) {
 		this.diskStorage = diskStorage;
 		this.amazonStorage = amazonStorage;
 		this.createUserDocument = createUserDocument;
 		this.amazonDocumentAnalyser = amazonDocumentAnalyser;
+		this.createWordMatch = createWordMatch;
 	}
 
 	@GetMapping("/")
 	public ResponseEntity<List<String>> listUploadedFiles(Model model) throws IOException {
 
-		List<String> result = diskStorage.loadAll()
-				.map(path -> MvcUriComponentsBuilder
-						.fromMethodName(FileUploadResource.class, "serveFile", path.getFileName().toString()).build()
-						.toUri()
-						.toString())
-				.collect(Collectors.toList());
+		List<String> resultFromAmazonStorage = amazonStorage.loadAll();
 
-		return ResponseEntity.ok().body(result);
+		return ResponseEntity.ok().body(resultFromAmazonStorage);
 	}
 
 	@GetMapping("/{filename:.+}")
@@ -90,7 +89,7 @@ public class FileUploadResource {
 		diskStorage.store(file);
 
 		// deve retornar URL de acesso
-		amazonStorage.store(file);
+		String resourceUrl = amazonStorage.store(file);
 
 		List<String> wordsInDocument = amazonDocumentAnalyser.analyseDocument(fileName);
 
@@ -99,10 +98,18 @@ public class FileUploadResource {
 				.sorted((Comparator<WordMatch>) (word1, word2) -> word2.getQuantity().compareTo(word1.getQuantity()))
 				.collect(Collectors.toList());
 
-		UserDocument result = createUserDocument.execute(UserDocument.builder().title(fileName)
-				.location(s3Url.concat("/")).matches(matches).user("Pedro Santos").createdAt(new Date()).build());
+		UserDocument createdDocument = UserDocument.builder().build();
 
-		return ResponseEntity.created(null).body(result);
+		createdDocument = createUserDocument
+				.insert(UserDocument.builder().title(fileName).location(String.format("https://%s", resourceUrl))
+						.matches(matches).user("Pedro Santos").createdAt(new Date()).build());
+
+		for (WordMatch match : matches)
+			match.setDocument(createdDocument);
+
+		createWordMatch.insertAll(matches);
+
+		return ResponseEntity.created(null).body(createdDocument);
 	}
 
 	private WordMatch getWordOccurrencesInList(String word, List<String> wordList) {

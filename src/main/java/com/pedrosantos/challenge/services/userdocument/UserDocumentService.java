@@ -7,14 +7,14 @@ import com.pedrosantos.challenge.entities.UserDocument;
 import com.pedrosantos.challenge.repositories.UserDocumentRepository;
 
 @Service
-public class CreateUserDocumentService {
+public class UserDocumentService {
 
 	@Autowired
-	private UserDocumentRepository userDocumentRepository;
+	private UserDocumentRepository repo;
 
-	public UserDocument execute(UserDocument userDocument) {
+	public UserDocument insert(UserDocument obj) {
 
-		UserDocument result = userDocumentRepository.save(userDocument);
+		UserDocument result = repo.save(obj);
 
 		return result;
 	}
