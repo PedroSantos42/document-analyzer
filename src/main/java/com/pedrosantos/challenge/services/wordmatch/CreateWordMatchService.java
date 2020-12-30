@@ -2,21 +2,23 @@ package com.pedrosantos.challenge.services.wordmatch;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.pedrosantos.challenge.entities.WordMatch;
 import com.pedrosantos.challenge.repositories.WordMatchRepository;
 
-@Service
-public class WordMatchService {
+import lombok.AllArgsConstructor;
 
-	@Autowired
+@Service
+@AllArgsConstructor
+public class CreateWordMatchService {
+
 	private WordMatchRepository repo;
 
-	public WordMatch insert(WordMatch obj) {
+	public WordMatch insertOne(WordMatch obj) {
 
 		obj.setId(null);
+
 		WordMatch result = repo.save(obj);
 
 		return result;

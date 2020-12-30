@@ -41,28 +41,46 @@ public class AmazonTextractProvider {
 		// Get the document from S3
 		S3Object s3object = s3client.getObject(bucket, fileName);
 
+		// make the analysis asynchronously
+		GetDocumentAnalysisResult analysisResult = StartAsyncDocumentAnalysis(s3object);
+
+		// get texts from analysis result
+		List<String> allWordsFromDocument = getWordsFromAnalysedDocument(analysisResult);
+
+		return allWordsFromDocument;
+	}
+
+	private GetDocumentAnalysisResult StartAsyncDocumentAnalysis(S3Object s3object) {
+
+		// make the analysis request
 		StartDocumentAnalysisRequest startDocumentAnalysisRequest = new StartDocumentAnalysisRequest()
 				.withFeatureTypes("TABLES", "FORMS").withDocumentLocation(
 						new DocumentLocation().withS3Object(new com.amazonaws.services.textract.model.S3Object()
 								.withName(s3object.getKey()).withBucket(s3object.getBucketName())));
 
+		// start document analysis
 		StartDocumentAnalysisResult analysisRequest = textractClient
 				.startDocumentAnalysis(startDocumentAnalysisRequest);
 
-		String jobId = analysisRequest.getJobId();
+		// get ID for future referring
+		String analysisJobId = analysisRequest.getJobId();
 
-		Boolean isAnalysisInProgress = true;
-		GetDocumentAnalysisRequest documentAnalysisRequest = new GetDocumentAnalysisRequest().withJobId(jobId);
+		// make request and get the analysis results
+		GetDocumentAnalysisRequest documentAnalysisRequest = new GetDocumentAnalysisRequest().withJobId(analysisJobId);
 		GetDocumentAnalysisResult analysisResult = new GetDocumentAnalysisResult();
 
+		// checking for analysis completion
+		Boolean isAnalysisInProgress = true;
 		do {
 			analysisResult = textractClient.getDocumentAnalysis(documentAnalysisRequest);
 
+			// verify the analysis status
 			isAnalysisInProgress = analysisResult.getJobStatus().equals("IN_PROGRESS");
 
+			// wait 3 seconds
 			if (isAnalysisInProgress) {
 				try {
-					Thread.sleep(4000);
+					Thread.sleep(3000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -71,8 +89,16 @@ public class AmazonTextractProvider {
 
 		} while (isAnalysisInProgress);
 
-		// get texts from analysis response
-		List<String> textBlocks = analysisResult.getBlocks().stream().filter(block -> block.getText() != null)
+		return analysisResult;
+	}
+
+	private List<String> getWordsFromAnalysedDocument(GetDocumentAnalysisResult analysedDocument) {
+
+		List<String> textBlocks = new ArrayList<>();
+
+		// get TextBlocks from Amazon Textract document analysis response
+		// filtering blocks with empty spaces and removing punctuation
+		textBlocks = analysedDocument.getBlocks().stream().filter(block -> block.getText() != null)
 				.map(block -> block.getText().trim().replaceAll("\\p{Punct}+$", "").replace(",", ""))
 				.collect(Collectors.toList());
 
@@ -83,13 +109,14 @@ public class AmazonTextractProvider {
 		// remove textBlocks with blank spaces
 		textBlocks = textBlocks.stream().filter(textBlock -> !textBlock.contains(" ")).collect(Collectors.toList());
 
+		// removing blank spaces
 		List<String> separatedWordsFromTextBlocksWithBlankSpaces = new ArrayList<>();
-
 		for (String text : textBlocksWithBlankSpaces)
 			separatedWordsFromTextBlocksWithBlankSpaces.addAll(Arrays.asList(text.trim().split(" ")));
 
 		textBlocks.addAll(separatedWordsFromTextBlocksWithBlankSpaces);
 
+		// process one more time for removing invalid characters
 		textBlocks = textBlocks.stream().filter(textBlock -> !textBlock.trim().isEmpty())
 				.map(textBlock -> textBlock.replaceAll("\\p{Punct}+$", "")).collect(Collectors.toList());
 
