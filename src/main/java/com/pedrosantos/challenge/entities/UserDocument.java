@@ -21,19 +21,19 @@ import lombok.Data;
 @Entity(name = "USER_DOCUMENTS")
 public class UserDocument implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
 
-    private String title;
-    private String location;
-    private String user;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
 
-    @OneToMany(mappedBy = "document")
-    private List<WordMatch> matches;
+	private String title;
+	private String location;
+	private String user;
 
-    @Column(name = "created_at")
-    @JsonProperty("created_at")
-    private Date createdAt;
+	@OneToMany(mappedBy = "document")
+	private List<WordMatch> matches;
+
+	@Column(name = "created_at")
+	@JsonProperty("created_at")
+	private Date createdAt;
 }
