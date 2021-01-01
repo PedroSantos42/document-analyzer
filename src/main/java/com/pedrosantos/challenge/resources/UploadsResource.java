@@ -48,7 +48,7 @@ public class UploadsResource {
 	public ResponseEntity<List<ListUserDocumentDTO>> index() {
 
 		// get list of documents from database
-		List<UserDocument> userDocuments = listUserDocument.findAll();
+		List<UserDocument> userDocuments = listUserDocument.getAll();
 
 		// convert listed records into DTO response format
 		List<ListUserDocumentDTO> userDocumentsDTO = userDocuments.stream().map(document -> new ListUserDocumentDTO(document)).collect(Collectors.toList());
