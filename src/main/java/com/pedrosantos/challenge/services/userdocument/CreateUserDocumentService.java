@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CreateUserDocumentService {
 
-	private UserDocumentRepository repo;
+	private final UserDocumentRepository repo;
 
 	public UserDocument insertOne(UserDocument obj) {
 
