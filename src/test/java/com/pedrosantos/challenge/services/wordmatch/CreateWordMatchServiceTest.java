@@ -4,7 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,9 +34,18 @@ public class CreateWordMatchServiceTest {
 
 	private WordMatch wordMatch;
 
+	private List<WordMatch> wordMatches;
+
 	@BeforeAll
 	public void setUp() {
-		wordMatch = WordMatch.builder().id(1).build();
+
+		wordMatches = new ArrayList<WordMatch>();
+
+		for (int iterator = 1; iterator <= 3; iterator++) {
+			wordMatch = mock(WordMatch.class);
+			wordMatch.setId(iterator);
+			wordMatches.add(wordMatch);
+		}
 	}
 
 	@Test
@@ -47,5 +60,18 @@ public class CreateWordMatchServiceTest {
 		then(repository).should(times(1)).save(wordMatch);
 		assertNotNull(createdInstance);
 		assertTrue(createdInstance instanceof WordMatch);
+	}
+
+	@Test
+	public void createMoreThanOneWordMatches_withValidArgs_returnCreatedInstances() {
+		// arrange
+		given(repository.saveAll(wordMatches)).willReturn(wordMatches);
+
+		// act
+		List<WordMatch> createdInstances = createWordMatch.insertAll(wordMatches);
+
+		// assert
+		then(repository).should(times(1)).saveAll(wordMatches);
+		assertNotNull(createdInstances);
 	}
 }

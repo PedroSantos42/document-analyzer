@@ -1,5 +1,6 @@
 package com.pedrosantos.challenge.resources;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import com.pedrosantos.challenge.entities.WordMatch;
 import com.pedrosantos.challenge.providers.AmazonS3Provider;
 import com.pedrosantos.challenge.providers.AmazonTextractProvider;
 import com.pedrosantos.challenge.providers.DiskStorageProvider;
+import com.pedrosantos.challenge.providers.SpreadsheetConversionProvider;
 import com.pedrosantos.challenge.services.userdocument.CreateUserDocumentService;
 import com.pedrosantos.challenge.services.userdocument.ListUserDocumentService;
 import com.pedrosantos.challenge.services.wordmatch.CreateWordMatchService;
@@ -26,9 +28,9 @@ import com.pedrosantos.challenge.services.wordmatch.ListWordMatchesFromDocumentS
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(value = "/uploads")
+@RequestMapping(value = "/files")
 @AllArgsConstructor
-public class UploadsResource {
+public class FilesResource {
 
 	private DiskStorageProvider diskStorageProvider;
 
@@ -43,6 +45,20 @@ public class UploadsResource {
 	private ListUserDocumentService listUserDocument;
 
 	private CreateWordMatchService createWordMatches;
+	
+	private SpreadsheetConversionProvider spreadsheetConverter;
+	
+	@GetMapping(value = "/teste")
+	public ResponseEntity<String> download() {
+		
+		try {
+			spreadsheetConverter.create("teste");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return ResponseEntity.ok("Sucesso!");
+	}
 
 	@GetMapping
 	public ResponseEntity<List<ListUserDocumentDTO>> index() {
