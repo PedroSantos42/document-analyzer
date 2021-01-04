@@ -8,10 +8,10 @@ import com.pedrosantos.challenge.entities.UserDocument;
 import com.pedrosantos.challenge.repositories.UserDocumentRepository;
 import com.pedrosantos.challenge.services.exceptions.ObjectNotFoundException;
 
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class ListUserDocumentService {
 
 	private UserDocumentRepository repository;

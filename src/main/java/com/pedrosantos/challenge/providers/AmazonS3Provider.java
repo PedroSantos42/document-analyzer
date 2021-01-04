@@ -28,10 +28,19 @@ public class AmazonS3Provider {
 	@Value("${storage.folder}")
 	private String diskFolder;
 
-	public String store(MultipartFile file) {
-		String filePath = String.format("%s/%s", Paths.get(diskFolder), file.getOriginalFilename());
+	public String store(MultipartFile multipartFile) {
+		return this.putObjectInS3Bucket(multipartFile, null);
+	}
 
-		PutObjectRequest request = new PutObjectRequest(bucketName, file.getOriginalFilename(), new File(filePath));
+	public String store(File file) {
+		return this.putObjectInS3Bucket(null, file);
+	}
+
+	private String putObjectInS3Bucket(MultipartFile multipartFile, File file) {
+
+		File uploadFile = file != null ? file : createFileFromMultipartFile(multipartFile);
+
+		PutObjectRequest request = new PutObjectRequest(bucketName, uploadFile.getName(), uploadFile);
 
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentType("plain/text");
@@ -41,10 +50,14 @@ public class AmazonS3Provider {
 
 		s3Client.putObject(request);
 
-		URL s3ObjectUrl = s3Client.getUrl(bucketName, file.getOriginalFilename());
+		URL s3ObjectUrl = s3Client.getUrl(bucketName, uploadFile.getName());
 		String resourceUrl = String.format("%s%s", s3ObjectUrl.getHost(), s3ObjectUrl.getPath());
 
 		return resourceUrl;
+	}
+
+	private File createFileFromMultipartFile(MultipartFile multipartFile) {
+		return new File(String.format("%s/%s", Paths.get(diskFolder), multipartFile.getOriginalFilename()));
 	}
 
 	public List<String> loadAll() {
