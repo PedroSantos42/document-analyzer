@@ -1,4 +1,4 @@
-# Desafio Spring Boot
+# Proposta do App
 
 Dado o requisito para um sistema de processamento de documentos com as seguintes características:
 
@@ -18,7 +18,7 @@ Dado o requisito para um sistema de processamento de documentos com as seguintes
 
 ### Diante disso: defina o modelo de dados e implementa uma API Rest para esta demanda
 
-É importante que você
+É importante que você:
     - Implemente a persistência de dados para Banco de Dados Relacional;
     - Procure fazer um código limpo e testável alcançando 90% de cobertura no mínimo;
     - Java 8 ou superior;
@@ -29,18 +29,3 @@ Será avaliado:
     - A utilização das API's nativas e de terceiros;
     - Boas práticas de desenvolvimento (Clean Code e SOLID);
     - Arquitetura e cobertura.
-
-
-## Resumo
-
-***RN***
-1. A aplicação deve processar o total de ocorrência das palavras de documentos
-2. A aplicação deve disponibilizar para download planilha com os dados de documentos processados
-
-***RF***
-1. A aplicação deve processar o total de ocorrências de todas as palavras de um determinado arquivo
-
-***RNF***
-1. A aplicação deve ser desenvolvida com *Java 8 ou superior.*
-2. A aplicação deve ser desenvolvida com *Spring Boot.*
-3. A aplicação deve ser desenvolvida com banco de dados *SQL.*
