@@ -19,13 +19,13 @@ Dado o requisito para um sistema de processamento de documentos com as seguintes
 ### Diante disso: defina o modelo de dados e implementa uma API Rest para esta demanda
 
 É importante que você:
-    - Implemente a persistência de dados para Banco de Dados Relacional;
-    - Procure fazer um código limpo e testável alcançando 90% de cobertura no mínimo;
-    - Java 8 ou superior;
-    - Use o Lombok.
+    1. Implemente a persistência de dados para Banco de Dados Relacional;
+    2. Procure fazer um código limpo e testável alcançando 90% de cobertura no mínimo;
+    3. Java 8 ou superior;
+    4. Use o Lombok.
 
 Será avaliado:
-    - A organização da solução;
-    - A utilização das API's nativas e de terceiros;
-    - Boas práticas de desenvolvimento (Clean Code e SOLID);
-    - Arquitetura e cobertura.
+    1. A organização da solução;
+    2. A utilização das API's nativas e de terceiros;
+    3. Boas práticas de desenvolvimento (Clean Code e SOLID);
+    4. Arquitetura e cobertura.
